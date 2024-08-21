@@ -1,8 +1,7 @@
 import csv
 import sys
-from turtledemo.forest import doit1
 
-from util import Node, StackFrontier, QueueFrontier
+from util import Node, QueueFrontier
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -85,8 +84,6 @@ def main():
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
 
-
-
 def shortest_path(source, target):
     """
     Returns the shortest list of (movie_id, person_id) pairs
@@ -95,55 +92,43 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # TODO
-    memory_of_nodes = QueueFrontier()
-    path = []
-    checked = []
-    count = 0
-    node_list = QueueFrontier()
-    neighbors_for_source = neighbors_for_person(source)
+    # If the source and target are the same, return an empty path
+    if source == target:
+        return []
 
-    node = Node(state=(None, source), parent=(None,None), action=None)
-    checked.append(source)
+    # Initialize the frontier with the starting position
+    start = Node(state=source, parent=None, action=None)
+    frontier = QueueFrontier()
+    frontier.add(start)
 
-    for neighbor in neighbors_for_source:
-        node = Node(state=neighbor, parent=(None, source), action=None)
-        memory_of_nodes.add(node)
+    # Initialize an empty set for explored nodes
+    explored = set()
 
-    if memory_of_nodes.contains_state(target):
-        node_list.add(getting_required_node(memory_of_nodes, target))
-        count += 1
+    # Loop until the solution is found
+    while not frontier.empty():
+        # Remove a node from the frontier
+        node = frontier.remove()
 
-    else:
-        while not memory_of_nodes.empty():
-            node = memory_of_nodes.remove()
-            node_list.add(node)
-            checked.append(node.state[1])
-            neighbors = neighbors_for_person(node.state[1])
-            for neighbor in neighbors:
-                if neighbor[1] in checked:
-                    continue
-                else:
-                    new_node = Node(state=neighbor, parent=node.state, action=None)
-                    memory_of_nodes.add(new_node)
-                    if memory_of_nodes.contains_state(target):
-                        node_list.add(memory_of_nodes.frontier[0])
-                        count += 1
-                        break
+        # Mark the node as explored
+        explored.add(node.state)
 
-    if count == 1:
-        node = node_list.frontier[-1]
-        while True:
-            if node.parent[1] is source:
-                path.append(node.state)
-                break
-            path.append(node.state)
-            node = getting_required_node(node_list, node.parent[1])
+        # Explore neighbors
+        for movie_id, person_id in neighbors_for_person(node.state):
+            if person_id == target:
+                # If the neighbor is the target, return the path
+                path = [(movie_id, person_id)]
+                while node.parent is not None:
+                    path.append((node.action, node.state))
+                    node = node.parent
+                path.reverse()
+                return path
 
-        path.reverse()
-        return path
+            if person_id not in explored and not frontier.contains_state(person_id):
+                child = Node(state=person_id, parent=node, action=movie_id)
+                frontier.add(child)
 
-
+    # If no path is found
+    return None
 
 
 def person_id_for_name(name):
@@ -183,22 +168,6 @@ def neighbors_for_person(person_id):
         for person_id in movies[movie_id]["stars"]:
             neighbors.add((movie_id, person_id))
     return neighbors
-
-def getting_required_node(node_list, destination):
-    for node in node_list.frontier:
-        if node.state[1] == destination:
-            return node
-        else:
-            continue
-    return None
-
-def getting_required_node_by_state(node_list, state):
-    for node in node_list.frontier:
-        if state == node.state:
-            return node
-        else:
-            continue
-    return None
 
 
 if __name__ == "__main__":
