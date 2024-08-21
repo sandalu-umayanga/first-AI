@@ -13,7 +13,7 @@ class StackFrontier():
         self.frontier.append(node)
 
     def contains_state(self, state):
-        return any(node.state[1] == state for node in self.frontier)
+        return any(node.state == state for node in self.frontier)
 
     def empty(self):
         return len(self.frontier) == 0
@@ -28,7 +28,6 @@ class StackFrontier():
 
 
 class QueueFrontier(StackFrontier):
-
     def remove(self):
         if self.empty():
             raise Exception("empty frontier")
